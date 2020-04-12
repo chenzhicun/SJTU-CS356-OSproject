@@ -1,4 +1,4 @@
-obj-m := ptree_module.o
+obj-m := pstree.o
 KID := ~/kernel/goldfish
 CROSS_COMPILE=arm-linux-androideabi-
 CC=$(CROSS_COMPILE)gcc

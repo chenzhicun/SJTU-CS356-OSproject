@@ -1,8 +1,8 @@
-cmd_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o := arm-linux-androideabi-gcc -Wp,-MD,/home/czc/project/OSproject/hello/Project1/Problem1/.ptree_module.mod.o.d  -nostdinc -isystem /home/czc/tools/android-ndk-linux/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/../lib/gcc/arm-linux-androideabi/4.9/include -I/home/czc/kernel/goldfish/arch/arm/include -Iarch/arm/include/generated -Iinclude  -include /home/czc/kernel/goldfish/include/linux/kconfig.h -D__KERNEL__ -mlittle-endian -Iarch/arm/mach-goldfish/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -Os -fno-pic -marm -fno-dwarf2-cfi-asm -mabi=aapcs-linux -mno-thumb-interwork -funwind-tables -D__LINUX_ARM_ARCH__=7 -march=armv7-a -msoft-float -Uarm -Wframe-larger-than=1024 -fno-stack-protector -Wno-unused-but-set-variable -fomit-frame-pointer -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(ptree_module.mod)"  -D"KBUILD_MODNAME=KBUILD_STR(ptree_module)" -DMODULE  -c -o /home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o /home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.c
+cmd_/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o := arm-linux-androideabi-gcc -Wp,-MD,/home/czc/project/OSproject/Project1/Problem1/.pstree.mod.o.d  -nostdinc -isystem /home/czc/tools/android-ndk-linux/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/../lib/gcc/arm-linux-androideabi/4.9/include -I/home/czc/kernel/goldfish/arch/arm/include -Iarch/arm/include/generated -Iinclude  -include /home/czc/kernel/goldfish/include/linux/kconfig.h -D__KERNEL__ -mlittle-endian -Iarch/arm/mach-goldfish/include -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -Wno-format-security -fno-delete-null-pointer-checks -Os -fno-pic -marm -fno-dwarf2-cfi-asm -mabi=aapcs-linux -mno-thumb-interwork -funwind-tables -D__LINUX_ARM_ARCH__=7 -march=armv7-a -msoft-float -Uarm -Wframe-larger-than=1024 -fno-stack-protector -Wno-unused-but-set-variable -fomit-frame-pointer -Wdeclaration-after-statement -Wno-pointer-sign -fno-strict-overflow -fconserve-stack  -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(pstree.mod)"  -D"KBUILD_MODNAME=KBUILD_STR(pstree)" -DMODULE  -c -o /home/czc/project/OSproject/Project1/Problem1/pstree.mod.o /home/czc/project/OSproject/Project1/Problem1/pstree.mod.c
 
-source_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o := /home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.c
+source_/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o := /home/czc/project/OSproject/Project1/Problem1/pstree.mod.c
 
-deps_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o := \
+deps_/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o := \
     $(wildcard include/config/module/unload.h) \
   include/linux/module.h \
     $(wildcard include/config/sysfs.h) \
@@ -336,6 +336,6 @@ deps_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o := \
   include/linux/vermagic.h \
   include/generated/utsrelease.h \
 
-/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o: $(deps_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o)
+/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o: $(deps_/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o)
 
-$(deps_/home/czc/project/OSproject/hello/Project1/Problem1/ptree_module.mod.o):
+$(deps_/home/czc/project/OSproject/Project1/Problem1/pstree.mod.o):
