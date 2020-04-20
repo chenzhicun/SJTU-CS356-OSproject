@@ -20,7 +20,12 @@ void print_pstree(struct prinfo *buffer, int nr)
     int *depth;
     depth = (int*)malloc(nr * sizeof(int));
     memset(depth, 0, nr);
-    int i,j,k; //it seems C compiler doesn't support initialization in for loop
+    int i,j,k;      //it seems C compiler doesn't support initialization in for loop
+
+/*
+    TODO:filter the swapper process, which pid is 0.
+    We will just begin from init process, which pid is 1.
+*/
 
     printf("%s,%d,%ld,%d,%d,%d,%ld\n", buffer[0].comm, buffer[0].pid, buffer[0].state,
            buffer[0].parent_pid, buffer[0].first_child_pid, buffer[0].next_sibling_pid, buffer[0].uid);
