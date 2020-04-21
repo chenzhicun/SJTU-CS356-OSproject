@@ -1,1 +1,0 @@
-cmd_/home/czc/project/OSproject/Project1/Problem1/pstree.ko := arm-linux-androideabi-ld -r  -T /home/czc/kernel/goldfish/scripts/module-common.lds --build-id  -o /home/czc/project/OSproject/Project1/Problem1/pstree.ko /home/czc/project/OSproject/Project1/Problem1/pstree.o /home/czc/project/OSproject/Project1/Problem1/pstree.mod.o
