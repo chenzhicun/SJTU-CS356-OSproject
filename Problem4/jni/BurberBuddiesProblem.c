@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
-#define CUSTOMER_TIME 10
+#define CUSTOMER_TIME 20
 #define BURGER_TIME 3
 
 struct COOK{
@@ -45,7 +45,7 @@ void *customer_func(void *param)
     sleep(rand()%CUSTOMER_TIME);
 
     sem_wait(&console_mutex);
-    printf("customer[%d] come.\n",customer_id);
+    printf("Customer[%d] come.\n",customer_id);
     sem_post(&console_mutex);
     sem_post(&customer);
     sem_wait(&cashier);
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
     pthread_t *cashier_threads=(pthread_t*)malloc(cashier_size*sizeof(pthread_t));
     pthread_t *cook_threads=(pthread_t*)malloc(cook_size*sizeof(pthread_t));
 
-    printf("Cooks[%d],Cashiers[%d],Customers[%d],Rack[%d]\nBegin run.\n",cook_size,cashier_size,customer_size,rack_size);
+    printf("Cooks[%d],Cashiers[%d],Customers[%d],Rack[%d]\n\nBegin run.\n\n",cook_size,cashier_size,customer_size,rack_size);
 
     for(i=0;i<cook_size;i++)
     {

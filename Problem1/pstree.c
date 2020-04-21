@@ -21,7 +21,8 @@ struct prinfo
     long state;             // current state of process
     long uid;               // user id of process owner
     /*in sched.h this length is 16, here I change it to 16 to fit the defination in sched.h*/
-    char comm[16];          // name of program executed
+    /*However, now it works fine....... I'm a little confused.*/
+    char comm[64];          // name of program executed
 };
 
 void tree_dfs(struct task_struct *task, struct prinfo *buf, int *nr)
@@ -79,7 +80,7 @@ static int addsyscall_init(void)
     long *syscall = (long *)0xc000d8c4;
     oldcall = (int (*)(void))(syscall[__NR_ptreecall]);
     syscall[__NR_ptreecall] = (unsigned long)ptree;
-    printk(KERN_INFO "module load!\n");
+    printk(KERN_INFO "my pstree module load!\n");
     return 0;
 }
 
@@ -87,7 +88,7 @@ static void addsyscall_exit(void)
 {
     long *syscall = (long *)0xc000d8c4;
     syscall[__NR_ptreecall] = (unsigned long)oldcall;
-    printk(KERN_INFO "module exit!\n");
+    printk(KERN_INFO "my pstree module exit!\n");
 }
 module_init(addsyscall_init);
 module_exit(addsyscall_exit);

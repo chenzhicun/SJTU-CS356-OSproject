@@ -12,7 +12,7 @@ struct prinfo
     pid_t next_sibling_pid; // pid of older sibling
     long state;             // current state of process
     long uid;               // user id of process owner
-    char comm[16];          // name of program executed
+    char comm[64];          // name of program executed
 };
 
 void print_pstree(struct prinfo *buffer, int nr)
@@ -27,12 +27,12 @@ void print_pstree(struct prinfo *buffer, int nr)
     We will just begin from init process, which pid is 1.
 */
 
-    printf("%s,%d,%ld,%d,%d,%d,%ld\n", buffer[0].comm, buffer[0].pid, buffer[0].state,
-           buffer[0].parent_pid, buffer[0].first_child_pid, buffer[0].next_sibling_pid, buffer[0].uid);
+    printf("%s,%d,%ld,%d,%d,%d,%ld\n", buffer[1].comm, buffer[1].pid, buffer[1].state,
+           buffer[1].parent_pid, buffer[1].first_child_pid, buffer[1].next_sibling_pid, buffer[1].uid);
 
-    for (i = 1;i<nr;i++)
+    for (i = 2;i<nr;i++)
     {
-        for(j=i-1;j>=0;j--)
+        for(j=i-1;j>=1;j--)
         {
             if(buffer[i].parent_pid==buffer[j].pid)
             {
