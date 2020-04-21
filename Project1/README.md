@@ -1,6 +1,5 @@
-# SJTU-CS356-OSproject
-This is my operating system(CS356) projects in SJTU.
-### Project1
+# CS356-Project1
+
 - ***Problem1***
 
   >To use my *pstree* module, you should go to directory *Problem1* in Linux terminal and type **make** command. Make sure that you have installed *sdk* and *ndk* correctly. Then you will get a file named *pstree.ko*, which you should push to your virtual device. After that you can use **insmod** to install this module and use **lsmod** to check.
@@ -81,5 +80,4 @@ This is my operating system(CS356) projects in SJTU.
   >```
   >
   >
-
 
