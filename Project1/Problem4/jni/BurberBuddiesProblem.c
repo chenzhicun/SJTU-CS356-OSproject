@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
-#define CUSTOMER_TIME 20
-#define BURGER_TIME 3
+#define CUSTOMER_TIME 100
+#define BURGER_TIME 5
 
 struct COOK{
     int cook_id;
@@ -84,6 +84,7 @@ void *cashier_func(void *param)
     int cashier_id=*(int*)param;
     while(1)
     {
+        //sleep(1);
         sem_wait(&mutex1);
         if(remain_customer_count<=0)
         {
@@ -157,10 +158,10 @@ void *cook_func(void *param)
         }
 
         sem_wait(&empty_slots_on_rack);
-        sem_post(&burgers_on_rack);
         sem_wait(&console_mutex);
         printf("Cook[%d] make a burger.\n",cook_id);
         sem_post(&console_mutex);
+        sem_post(&burgers_on_rack);
     }
 
     return NULL;
