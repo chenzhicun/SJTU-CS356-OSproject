@@ -8,7 +8,7 @@ MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Zhicun Chen");
 
 #define MY_MM_LENGTH 10
-#define __NR_set_mm_limitscall 356
+#define __NR_set_mm_limitscall 383
 
 static int (*oldcall)(void);
 static int set_mm_limits(int uid,int mm_max){
@@ -21,8 +21,6 @@ static int set_mm_limits(int uid,int mm_max){
     }
     printk(KERN_INFO "---------------------");
     */
-    if(uid==0){full=-1;}
-    else{
     for(i=0;i<MY_MM_LENGTH;i++){
         if(my_mm_limits.uid[i]!=-1){
             if(my_mm_limits.uid[i]!=uid){
@@ -66,7 +64,7 @@ static int set_mm_limits(int uid,int mm_max){
         if(my_mm_limits.uid[i]!=-1){
             printk(KERN_INFO "uid=%d,mm_max=%d",my_mm_limits.uid[i],my_mm_limits.mm_max[i]);
         }
-    }}
+    }
 
     printk(KERN_INFO "\n");
 
