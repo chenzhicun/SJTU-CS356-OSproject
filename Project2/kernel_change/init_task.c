@@ -47,6 +47,7 @@ union thread_union init_thread_union __init_task_data =
 struct task_struct init_task = INIT_TASK(init_task);
 
 //my change begin
+// just initialize my_mm_limits and export it
 struct MMLimits my_mm_limits={
 	.uid={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
 	.mm_max={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}

@@ -6,7 +6,6 @@
  * 2020/06/10
  */
 
-
 #ifndef _LINUX_MM_H
 #define _LINUX_MM_H
 
@@ -36,6 +35,8 @@ struct writeback_control;
 
 //my change begin;
 #define MY_MM_LENGTH 10
+// MY_MM_LENGTH is the number of slots that can storage mm limit information
+// You can change it into fit number, however, remember to change MY_MM_LENGTH.
 struct MMLimits
 {
 	int uid[MY_MM_LENGTH];
@@ -43,6 +44,9 @@ struct MMLimits
 };
 
 extern struct MMLimits my_mm_limits;
+// these two extern functions will be used in adding oom_killer as syscall.
+extern void oom_killer_highest_rss(void);
+extern void oom_killer_longest_run_time(void);
 //my change end;
 
 #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */

@@ -69,7 +69,7 @@
 #include <linux/prefetch.h>
 #include <linux/page-debug-flags.h>
 //my change begin
-#include <linux/sched.h>
+#include <linux/sched.h>   // include this file for do_send_sig_info()
 //my change end
 
 #include <asm/tlbflush.h>
@@ -2444,12 +2444,236 @@ got_pg:
 
 }
 
+// my change begin
+#define MY_MM_LENGTH 10
+// same as described in mm.h
+void oom_killer_highest_rss(void){
+	struct task_struct *p;
+	int mm_alloc[MY_MM_LENGTH];
+	struct task_struct* max_rss_process[MY_MM_LENGTH];
+	int max_rss[MY_MM_LENGTH];
+	int i,found,index;
+
+	read_lock(&tasklist_lock);
+my_rss_oom_begin:
+	// initialize all useful variables
+	for(i=0;i<MY_MM_LENGTH;i++){
+		mm_alloc[i]=0;
+		max_rss_process[i] = NULL;         
+		max_rss[i]=0;
+	}
+	// go through all process
+	for_each_process(p) {
+		found=0;
+		// go through all my_mm_limits slots to find fit slot
+		for(i=0;i<MY_MM_LENGTH;i++){
+			if (p->cred->uid==my_mm_limits.uid[i]){
+				// if this slot have not been set, then set
+				if (max_rss_process[i] == NULL){
+					// this condition aims to avoid NULL pointers, since some kernel 
+					// processes do not have mm pointer.
+					if (p->mm){
+						max_rss_process[i]=p;
+						max_rss[i]=get_mm_rss(p->mm) * 4096;
+					}
+				}
+				else{
+					if (p->mm){
+						// if this process has larger rss than previous process, then updata
+						if ((get_mm_rss(p->mm) * 4096)>max_rss[i]){
+							max_rss_process[i]=p;
+							max_rss[i]=get_mm_rss(p->mm) * 4096;// FIX
+						}
+					}
+				}
+				found=1;
+				index=i;
+				break;
+			}
+		}
+		if (found){
+			if (p->mm){
+				// if we find a process fit , update the corresponding mm_alloc
+				mm_alloc[index]+=get_mm_rss(p->mm) * 4096;
+			}
+		}
+	}
+	// check whether out-of-memory happens on each slot
+	for(i=0;i<MY_MM_LENGTH;i++){
+		// if this slot have not set information, then omit.
+		if (my_mm_limits.uid[i]==-1){continue;}
+		else{
+			// if do not exceed limits, then omit
+			if (mm_alloc[i] <= my_mm_limits.mm_max[i]){continue;}
+			else{
+				/*
+	 			* If the task is already exiting, don't alarm the sysadmin or kill
+	 			* its children or threads, just set TIF_MEMDIE so it can die quickly
+	 			*/
+				if (max_rss_process[i]->flags & PF_EXITING) {
+					set_tsk_thread_flag(max_rss_process[i], TIF_MEMDIE);
+					return;
+				}
+				task_lock(max_rss_process[i]);
+					printk(KERN_ERR "uid=%d,\tuRSS=%d,\tmm_max=%d,\tpid=%d,\tpRSS=%d\n",
+						max_rss_process[i]->cred->uid,mm_alloc[i],my_mm_limits.mm_max[i],max_rss_process[i]->pid,max_rss[i]);
+				task_unlock(max_rss_process[i]);
+				
+				/*
+	 			* Kill all user processes sharing victim->mm in other thread groups, if
+	 			* any.  They don't get access to memory reserves, though, to avoid
+	 			* depletion of all memory.  This prevents mm->mmap_sem livelock when an
+	 			* oom killed thread cannot exit because it requires the semaphore and
+	 			* its contended by another thread trying to allocate memory itself.
+	 			* That thread will now get access to memory reserves since it has a
+	 			* pending fatal signal.
+	 			*/
+				for_each_process(p) {
+					if (p->mm == max_rss_process[i]->mm && !same_thread_group(p,max_rss_process[i]) 
+						&& !(p->flags & PF_KTHREAD)) {
+							if (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)
+								continue;
+							
+							task_lock(p);
+							printk(KERN_ERR "Kill process %d (%s) sharing same memory\n",p->pid, p->comm);
+							task_unlock(p);
+							do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
+						}
+				}
+				
+				set_tsk_thread_flag(max_rss_process[i], TIF_MEMDIE);
+				do_send_sig_info(SIGKILL, SEND_SIG_FORCED, max_rss_process[i], true);
+				mm_alloc[i] -= max_rss[i];
+			}
+		}
+	}
+	/*
+	 * Check whether each slot satisfies the limits,
+	 * if not , do the whole procedure again.
+	 */ 
+	for (i=0;i<MY_MM_LENGTH;i++){
+		if (my_mm_limits.uid[i]==-1){continue;}
+		else{
+			if (mm_alloc[i] > my_mm_limits.mm_max[i]){
+				goto my_rss_oom_begin;
+			}
+		}
+	}
+	read_unlock(&tasklist_lock);
+
+	return;
+}
+EXPORT_SYMBOL(oom_killer_highest_rss);
+
+void oom_killer_longest_run_time(void){
+	/*
+	 * The implementation details of this function is
+	 * actually very similar to oom_killer_highest_rss().
+	 * If you get confused, you can refer to the comments
+	 * of oom_killer_highest_rss().
+	 */ 
+	struct task_struct *p;
+	int mm_alloc[MY_MM_LENGTH];
+	struct task_struct* max_run_time_process[MY_MM_LENGTH];
+	int rss_max_rtime_process[MY_MM_LENGTH];
+	int i,found,index;
+
+	read_lock(&tasklist_lock);
+my_rtime_oom_begin:
+	for(i=0;i<MY_MM_LENGTH;i++){
+		mm_alloc[i] = 0;
+		max_run_time_process[i] = NULL;
+		rss_max_rtime_process[i] = 0;
+	}
+	for_each_process(p) {
+		found = 0;
+		for(i=0;i<MY_MM_LENGTH;i++){
+			if (p->cred->uid == my_mm_limits.uid[i]){
+				if (max_run_time_process[i] == NULL){
+					if (p->mm){
+						max_run_time_process[i] = p;
+						rss_max_rtime_process[i] = get_mm_rss(p->mm) * 4096;
+					}
+				}
+				else{
+					if (p->mm){
+						if((p->stime + p->utime) > (max_run_time_process[i]->stime + max_run_time_process[i]->utime)){
+							max_run_time_process[i] = p;
+							rss_max_rtime_process[i] = get_mm_rss(p->mm) * 4096;
+						}
+					}
+				}
+				found = 1;
+				index = i;
+				break;
+			}
+		}
+		if (found){
+			if (p->mm){
+				mm_alloc[index] += get_mm_rss(p->mm) * 4096;
+			}
+		}
+	}
+	for(i=0;i<MY_MM_LENGTH;i++){
+		if (my_mm_limits.uid[i] == -1){continue;}
+		else{
+			if (mm_alloc[i] <= my_mm_limits.mm_max[i]){continue;}
+			else{
+				if (max_run_time_process[i]->flags & PF_EXITING) {
+					set_tsk_thread_flag(max_run_time_process[i], TIF_MEMDIE);
+					return;
+				}
+				task_lock(max_run_time_process[i]);
+					printk(KERN_ERR "uid=%d,\tuRSS=%d,\tmm_max=%d,\tpid=%d,\tpRSS=%ld,\ttotal_run_time=%ld\n",
+						max_run_time_process[i]->cred->uid, mm_alloc[i], my_mm_limits.mm_max[i],
+						max_run_time_process[i]->pid, get_mm_rss(max_run_time_process[i]->mm) * 4096,
+						max_run_time_process[i]->utime + max_run_time_process[i]->stime);
+				task_unlock(max_run_time_process[i]);
+
+				for_each_process(p) {
+					if (p->mm == max_run_time_process[i]->mm && !same_thread_group(p, max_run_time_process[i])
+						&& !(p->flags & PF_KTHREAD)) {
+							if (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)
+								continue;
+
+							task_lock(p);
+							printk(KERN_ERR "Kill process %d (%s) sharing same memory\n",p->pid, p->comm);
+							task_unlock(p);
+							do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
+						}
+				}
+
+				set_tsk_thread_flag(max_run_time_process[i], TIF_MEMDIE);
+				do_send_sig_info(SIGKILL, SEND_SIG_FORCED, max_run_time_process[i], true);
+				mm_alloc[i] -= (get_mm_rss(max_run_time_process[i]->mm) * 4096);
+			}
+		}
+	}
+	for (i=0;i<MY_MM_LENGTH;i++){
+		if (my_mm_limits.uid[i]==-1){continue;}
+		else{
+			if (mm_alloc[i] > my_mm_limits.mm_max[i]){
+				goto my_rtime_oom_begin;
+			}
+		}
+	}
+	read_unlock(&tasklist_lock);
+
+	return;
+}
+EXPORT_SYMBOL(oom_killer_longest_run_time);
+/*
+ * The two lines below decide which oom_killer will be used,
+ * if you want to use specific one, just comment the other.
+ */ 
+#define OOM_KILLER_HIGHEST_RSS
+//#define OOM_KILLER_LONGEST_RUN_TIME
+
+// my change end
+
 /*
  * This is the 'heart' of the zoned buddy allocator.
  */
-//my change begin
-#define MY_MM_LENGTH 10
-//my change end
 struct page *
 __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 			struct zonelist *zonelist, nodemask_t *nodemask)
@@ -2459,16 +2683,6 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	struct page *page = NULL;
 	int migratetype = allocflags_to_migratetype(gfp_mask);
 	unsigned int cpuset_mems_cookie;
-
-	//my change begin
-	
-	struct task_struct *p;
-	int mm_alloc[MY_MM_LENGTH];
-	struct task_struct* max_rss_process[MY_MM_LENGTH];
-	int max_rss[MY_MM_LENGTH];
-	int i,found,index;
-	
-	//my change end
 
 	gfp_mask &= gfp_allowed_mask;
 
@@ -2518,89 +2732,24 @@ out:
 	if (unlikely(!put_mems_allowed(cpuset_mems_cookie) && !page))
 		goto retry_cpuset;
 
-	//my change begin
-	
+	// my change begin
+	/*
+	 * Using some pre-compile skills and values defined before
+	 * to decide which oom_killer will be used.
+	 */
+	#ifdef OOM_KILLER_HIGHEST_RSS
+	oom_killer_highest_rss();
+	#endif
 
-	read_lock(&tasklist_lock);
-my_oom_begin:
-	for(i=0;i<MY_MM_LENGTH;i++){
-		mm_alloc[i]=0;
-		max_rss_process[i] = NULL;         // max_rss_process[i]=0;
-		max_rss[i]=0;
-	}
-	for_each_process(p) {
-		found=0;
-		for(i=0;i<MY_MM_LENGTH;i++){
-			if (p->cred->uid==my_mm_limits.uid[i]){
-				if (max_rss_process[i] == NULL){
-					if (p->mm){
-						max_rss_process[i]=p;
-						max_rss[i]=get_mm_rss(p->mm) * 4096;
-					}
-				}
-				else{
-					if (p->mm){
-						if ((get_mm_rss(p->mm) * 4096)>max_rss[i]){
-							max_rss_process[i]=p;
-							max_rss[i]=get_mm_rss(p->mm) * 4096;// FIX
-						}
-					}
-				}
-				found=1;
-				index=i;
-				break;
-			}
-		}
-		if (found){
-			if (p->mm){
-				mm_alloc[index]+=get_mm_rss(p->mm) * 4096;
-			}
-		}
-	}
-	for(i=0;i<MY_MM_LENGTH;i++){
-		if (my_mm_limits.uid[i]==-1){continue;}
-		else{
-			if (mm_alloc[i] <= my_mm_limits.mm_max[i]){continue;}
-			else{
-				task_lock(max_rss_process[i]);
-					printk(KERN_ERR "uid=%d,\tuRSS=%d,\tmm_max=%d,\tpid=%d,\tpRSS=%d\n",
-						max_rss_process[i]->cred->uid,mm_alloc[i],my_mm_limits.mm_max[i],max_rss_process[i]->pid,max_rss[i]);
-				task_unlock(max_rss_process[i]);
-				
-				for_each_process(p) {
-					if (p->mm == max_rss_process[i]->mm && !same_thread_group(p,max_rss_process[i]) 
-						&& !(p->flags & PF_KTHREAD)) {
-							if (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)
-								continue;
-							
-							task_lock(p);
-							printk(KERN_ERR "Kill process %d (%s) sharing same memory\n",p->pid, p->comm);
-							task_unlock(p);
-							do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
-						}
-				}
-				
-				set_tsk_thread_flag(max_rss_process[i], TIF_MEMDIE);
-				do_send_sig_info(SIGKILL, SEND_SIG_FORCED, max_rss_process[i], true);
-				mm_alloc[i] -= max_rss[i];
-			}
-		}
-	}
-	for (i=0;i<MY_MM_LENGTH;i++){
-		if (my_mm_limits.uid[i]==-1){continue;}
-		else{
-			if (mm_alloc[i] > my_mm_limits.mm_max[i]){
-				goto my_oom_begin;
-			}
-		}
-	}
-	read_unlock(&tasklist_lock);
-	
-	//my change end
+	#ifdef OOM_KILLER_LONGEST_RUN_TIME
+	oom_killer_longest_run_time();
+	#endif
+	// my change end
 
 	return page;
 }
 EXPORT_SYMBOL(__alloc_pages_nodemask);
+
 
 /*
  * Common helper functions.

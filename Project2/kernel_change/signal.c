@@ -1231,6 +1231,10 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
 	return ret;
 }
 //my change begin
+/*
+ * This change is supporting we use do_send_sig_info()
+ * in our designed kernel module.
+ */
 EXPORT_SYMBOL(do_send_sig_info);
 //my change end
 

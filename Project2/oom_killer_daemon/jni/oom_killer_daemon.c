@@ -16,17 +16,21 @@
 #include <stdio.h>
 
 int main(int argc, char **argv){
-    daemon(0,0);
+    // this parameter can control how long the syscall will be called once.
     int sleepTime = atoi(argv[1]);
     printf("The time interval to run the oom killer is %d.\n", sleepTime);
+    
+    // To make this program to a daemon program.
+    daemon(0,0);
 
     while(1){
-        // this parameter can control how long the syscall will be called once.
         sleep(sleepTime);
+        
         if (syscall(382) != 0){
             printf("oops, oom killer crashed, please rerun this daemon.");
             break;
         }
+        
     }
 
     return -1;

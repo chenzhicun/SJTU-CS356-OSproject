@@ -27,18 +27,16 @@ static int set_mm_limits(int uid,int mm_max){
     int i;
     int full=0;
     /*
-    printk(KERN_INFO "---------------------");
-    for(i=0;i<MY_MM_LENGTH;i++){
-            printk(KERN_INFO "uid=%d,mm_max=%d",my_mm_limits.uid[i],my_mm_limits.mm_max[i]);
-    }
-    printk(KERN_INFO "---------------------");
-    */
+     * The whole my_mm_limits is updated by LRU algorithm.
+     * The smaller index is, the less recently it is used.
+     */
     for(i=0;i<MY_MM_LENGTH;i++){
         if(my_mm_limits.uid[i]!=-1){
             if(my_mm_limits.uid[i]!=uid){
                 continue;
             }
             else{
+                // to update my_mm_limits by LRU algorithm.
                 int j;
                 for(j=i;(j<(MY_MM_LENGTH-1))&&(my_mm_limits.uid[j+1]!=-1);j++){
                     my_mm_limits.uid[j]=my_mm_limits.uid[j+1];
@@ -46,12 +44,11 @@ static int set_mm_limits(int uid,int mm_max){
                 }
                 my_mm_limits.mm_max[j]=mm_max;
                 my_mm_limits.uid[j]=uid;
-                //my_mm_limits.mm_max[i]=mm_max;
-                //update last use
                 break;
             }
         }
         else{
+            // this slot have not been initialized before.
             my_mm_limits.uid[i]=uid;
             my_mm_limits.mm_max[i]=mm_max;
             break;
@@ -61,7 +58,10 @@ static int set_mm_limits(int uid,int mm_max){
         full=1;
         printk(KERN_ERR "The MMLimits is full! We will delete the earliest limits!\n");
     }
-
+    /*
+     * find a victim limits by LRU algorithm,
+     * and update limits by LRU algorithm.
+     */ 
     if(full){
         for(i=0;i<MY_MM_LENGTH-1;i++){
             my_mm_limits.uid[i]=my_mm_limits.uid[i+1];
