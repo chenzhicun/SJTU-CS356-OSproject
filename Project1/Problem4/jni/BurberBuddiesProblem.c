@@ -146,7 +146,6 @@ void *cook_func(void *param)
     
     while(1)
     {
-        sleep(cook_time);
         sem_wait(&mutex2);
         if(total_burger_count>=customer_size){
             sem_post(&mutex2);
@@ -158,6 +157,7 @@ void *cook_func(void *param)
         }
 
         sem_wait(&empty_slots_on_rack);
+        sleep(cook_time);
         sem_wait(&console_mutex);
         printf("Cook[%d] make a burger.\n",cook_id);
         sem_post(&console_mutex);
