@@ -21,8 +21,8 @@ MODULE_AUTHOR("Zhicun Chen");
 
 #define __NR_my_oom_killer 382
 
-// 0 means highest RSS, 1 means longest run time
-#define OOM_KILLER_TYPE 1
+// 0 means highest RSS, 1 means longest run time , 2 means worst.
+#define OOM_KILLER_TYPE 2
 
 static int (*oldcall)(void);
 static int my_oom_killer(void){
@@ -38,6 +38,9 @@ static int my_oom_killer(void){
 			break;
 		case 1:
 			oom_killer_longest_run_time();
+			break;
+		case 2:
+			oom_killer_worst();
 			break;
 		default:
 			oom_killer_highest_rss();

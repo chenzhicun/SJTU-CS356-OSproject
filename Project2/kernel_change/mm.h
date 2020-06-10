@@ -44,9 +44,10 @@ struct MMLimits
 };
 
 extern struct MMLimits my_mm_limits;
-// these two extern functions will be used in adding oom_killer as syscall.
+// these three extern functions will be used in adding oom_killer as syscall.
 extern void oom_killer_highest_rss(void);
 extern void oom_killer_longest_run_time(void);
+extern void oom_killer_worst(void);
 //my change end;
 
 #ifndef CONFIG_DISCONTIGMEM          /* Don't use mapnrs, do it properly */

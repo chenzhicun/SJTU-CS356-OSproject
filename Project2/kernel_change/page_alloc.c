@@ -69,7 +69,7 @@
 #include <linux/prefetch.h>
 #include <linux/page-debug-flags.h>
 //my change begin
-#include <linux/sched.h>   // include this file for do_send_sig_info()
+#include <linux/sched.h>
 //my change end
 
 #include <asm/tlbflush.h>
@@ -2479,7 +2479,7 @@ my_rss_oom_begin:
 				}
 				else{
 					if (p->mm){
-						// if this process has larger rss than previous process, then updata
+						// if this process has larger rss than previous process, then update
 						if ((get_mm_rss(p->mm) * 4096)>max_rss[i]){
 							max_rss_process[i]=p;
 							max_rss[i]=get_mm_rss(p->mm) * 4096;// FIX
@@ -2528,6 +2528,7 @@ my_rss_oom_begin:
 	 			* That thread will now get access to memory reserves since it has a
 	 			* pending fatal signal.
 	 			*/
+
 				for_each_process(p) {
 					if (p->mm == max_rss_process[i]->mm && !same_thread_group(p,max_rss_process[i]) 
 						&& !(p->flags & PF_KTHREAD)) {
@@ -2662,13 +2663,142 @@ my_rtime_oom_begin:
 	return;
 }
 EXPORT_SYMBOL(oom_killer_longest_run_time);
-/*
- * The two lines below decide which oom_killer will be used,
- * if you want to use specific one, just comment the other.
- */ 
+
+unsigned int compute_badness(struct task_struct* p){
+	/*
+	 * This function will compute the "badness" of one process
+	 * inspired by function "badness" in "oom_kill.c".
+	 */ 
+	long badness = 0;
+	int total_pages = totalram_pages + total_swap_pages;
+
+	task_lock(p);
+	if (!(p->mm) || (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)){
+		task_unlock(p);
+		return 0;
+	}
+	
+	if (!total_pages)
+		total_pages=1;
+
+	badness = get_mm_rss(p->mm) + p->mm->nr_ptes;
+	badness += get_mm_counter(p->mm, MM_SWAPENTS);
+
+	badness *= 1000;
+	badness /= total_pages;
+	task_unlock(p);
+
+	if (has_capability_noaudit(p, CAP_SYS_ADMIN))
+		badness -= 30;
+
+	badness += p->signal->oom_score_adj;
+
+	if (badness <= 0)
+		return 1;
+	return badness;
+}
+
+void oom_killer_worst(void){
+	/*
+	 * The implementation details of this function is
+	 * actually very similar to oom_killer_highest_rss().
+	 * If you get confused, you can refer to the comments
+	 * of oom_killer_highest_rss().
+	 */ 
+	struct task_struct *p;
+	int mm_alloc[MY_MM_LENGTH];
+	struct task_struct* worst_process[MY_MM_LENGTH];
+	int rss_worst_process[MY_MM_LENGTH];
+	int i,found,index;
+
+	read_lock(&tasklist_lock);
+my_badness_oom_begin:
+	for(i=0;i<MY_MM_LENGTH;i++){
+		mm_alloc[i] = 0;
+		worst_process[i] = NULL;
+		rss_worst_process[i] = 0;
+	}
+	for_each_process(p) {
+		found = 0;
+		for(i=0;i<MY_MM_LENGTH;i++){
+			if (p->cred->uid == my_mm_limits.uid[i]){
+				if (worst_process[i] == NULL){
+					if (p->mm){
+						worst_process[i] = p;
+						rss_worst_process[i] = get_mm_rss(p->mm) * 4096;
+					}
+				}
+				else{
+					if (p->mm){
+						if(compute_badness(p) > compute_badness(worst_process[i])){
+							worst_process[i] = p;
+							rss_worst_process[i] = get_mm_rss(p->mm) * 4096;
+						}
+					}
+				}
+				found = 1;
+				index = i;
+				break;
+			}
+		}
+		if (found){
+			if (p->mm){
+				mm_alloc[index] += get_mm_rss(p->mm) * 4096;
+			}
+		}
+	}
+	for(i=0;i<MY_MM_LENGTH;i++){
+		if (my_mm_limits.uid[i] == -1){continue;}
+		else{
+			if (mm_alloc[i] <= my_mm_limits.mm_max[i]){continue;}
+			else{
+				if (worst_process[i]->flags & PF_EXITING) {
+					set_tsk_thread_flag(worst_process[i], TIF_MEMDIE);
+					return;
+				}
+				task_lock(worst_process[i]);
+					printk(KERN_ERR "uid=%d,\tuRSS=%d,\tmm_max=%d,\tpid=%d,\tpRSS=%ld,\tbadness=%d\n",
+						worst_process[i]->cred->uid, mm_alloc[i], my_mm_limits.mm_max[i],
+						worst_process[i]->pid, get_mm_rss(worst_process[i]->mm) * 4096,
+						compute_badness(worst_process[i]));
+				task_unlock(worst_process[i]);
+
+				for_each_process(p) {
+					if (p->mm == worst_process[i]->mm && !same_thread_group(p, worst_process[i])
+						&& !(p->flags & PF_KTHREAD)) {
+							if (p->signal->oom_score_adj == OOM_SCORE_ADJ_MIN)
+								continue;
+
+							task_lock(p);
+							printk(KERN_ERR "Kill process %d (%s) sharing same memory\n",p->pid, p->comm);
+							task_unlock(p);
+							do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
+						}
+				}
+
+				set_tsk_thread_flag(worst_process[i], TIF_MEMDIE);
+				do_send_sig_info(SIGKILL, SEND_SIG_FORCED, worst_process[i], true);
+				mm_alloc[i] -= (get_mm_rss(worst_process[i]->mm) * 4096);
+			}
+		}
+	}
+	for (i=0;i<MY_MM_LENGTH;i++){
+		if (my_mm_limits.uid[i]==-1){continue;}
+		else{
+			if (mm_alloc[i] > my_mm_limits.mm_max[i]){
+				goto my_badness_oom_begin;
+			}
+		}
+	}
+	read_unlock(&tasklist_lock);
+
+	return;
+}
+EXPORT_SYMBOL(oom_killer_worst);
+
 #define OOM_KILLER_HIGHEST_RSS
 //#define OOM_KILLER_LONGEST_RUN_TIME
-
+//#define OOM_KILLER_WORST
 // my change end
 
 /*
@@ -2733,16 +2863,16 @@ out:
 		goto retry_cpuset;
 
 	// my change begin
-	/*
-	 * Using some pre-compile skills and values defined before
-	 * to decide which oom_killer will be used.
-	 */
 	#ifdef OOM_KILLER_HIGHEST_RSS
 	oom_killer_highest_rss();
 	#endif
 
 	#ifdef OOM_KILLER_LONGEST_RUN_TIME
 	oom_killer_longest_run_time();
+	#endif
+
+	#ifdef OOM_KILLER_WORST
+	oom_killer_worst();
 	#endif
 	// my change end
 
