@@ -11,6 +11,7 @@ MODULE_AUTHOR("Zhicun Chen");
 
 #define MY_MM_LENGTH 10
 #define __NR_my_oom_killer 382
+#define OOM_SCORE_ADJ_MIN (-1000)
 
 static int (*oldcall)(void);
 static int my_oom_killer(void){
@@ -65,7 +66,7 @@ my_oom_begin:
 					printk(KERN_ERR "uid=%d,\tuRSS=%d,\tmm_max=%d,\tpid=%d,\tpRSS=%d\n",
 						max_rss_process[i]->cred->uid,mm_alloc[i],my_mm_limits.mm_max[i],max_rss_process[i]->pid,max_rss[i]);
 				task_unlock(max_rss_process[i]);
-				/*
+				
 				for_each_process(p) {
 					if (p->mm == max_rss_process[i]->mm && !same_thread_group(p,max_rss_process[i]) 
 						&& !(p->flags & PF_KTHREAD)) {
@@ -78,7 +79,7 @@ my_oom_begin:
 							do_send_sig_info(SIGKILL, SEND_SIG_FORCED, p, true);
 						}
 				}
-				*/
+				
 				set_tsk_thread_flag(max_rss_process[i], TIF_MEMDIE);
 				do_send_sig_info(SIGKILL, SEND_SIG_FORCED, max_rss_process[i], true);
 				mm_alloc[i] -= max_rss[i];
