@@ -1,4 +1,14 @@
 /*
+ * This file is modified to support oom killer per user.
+ * You can search the modification by "my change begin".
+ * You are welcome to read my codes and offer me some 
+ * useful suggestions.
+ * 
+ * modified by Zhicun Chen
+ * 2020/06/10
+ */ 
+
+/*
  *  linux/mm/page_alloc.c
  *
  *  Manages the free list, the system allocates free pages here.

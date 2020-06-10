@@ -1,3 +1,15 @@
+/*
+ * This file is modified to test the oom-killer
+ * implemented by daemon program.
+ * 
+ * One example is:
+ * 
+ * ./oom_test_daemonARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000
+ * 
+ * modified by Zhicun Chen
+ * 2020/06/10
+ */ 
+
 #include <stdio.h>
 #include <errno.h>
 #include <sys/syscall.h>

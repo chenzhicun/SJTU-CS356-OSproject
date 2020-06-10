@@ -1,3 +1,12 @@
+/* 
+ * This file is modified to intialize my_mm_limits.
+ * You can search the modification by "my change begin".
+ * 
+ * modified by Zhicun Chen
+ * 2020/06/10
+ * 
+ */
+
 /*
  *  linux/arch/arm/kernel/init_task.c
  */

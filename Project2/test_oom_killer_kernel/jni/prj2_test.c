@@ -1,3 +1,16 @@
+/*
+ * This file is to test the oom-killer
+ * implemented in the kernel.
+ * 
+ * One proper example is:
+ * 
+ * ./oom_test_kernel_ARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000
+ * 
+ * written by TAs of CS356
+ * 
+ */
+
+
 #include <stdio.h>
 #include <errno.h>
 #include <sys/syscall.h>

@@ -1,4 +1,10 @@
-
+/*
+ * This file is aimed at testing the syscall
+ * set_mm_limits().
+ * 
+ * written by Zhicun Chen
+ * 2020/06/10
+ */
 
 int main(){
     syscall(383,10000,20000);

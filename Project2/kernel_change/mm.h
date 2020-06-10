@@ -1,3 +1,12 @@
+/*
+ * This file is modified to define my MMLimits struct.
+ * You can search the modification by "my change begin".
+ * 
+ * modified by Zhicun Chen
+ * 2020/06/10
+ */
+
+
 #ifndef _LINUX_MM_H
 #define _LINUX_MM_H
 
@@ -29,7 +38,6 @@ struct writeback_control;
 #define MY_MM_LENGTH 10
 struct MMLimits
 {
-	//int length;
 	int uid[MY_MM_LENGTH];
 	int mm_max[MY_MM_LENGTH];
 };

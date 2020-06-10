@@ -1,3 +1,6 @@
+// This file record the path of the files I modified to finish this project.
+
 ....../kernel/goldfish/arch/arm/kernel/init_task.c
 ....../kernel/goldfish/include/linux/mm.h
 ....../kernel/goldfish/kernel/signal.c
+....../kernel/goldfish/mm/page_alloc.c

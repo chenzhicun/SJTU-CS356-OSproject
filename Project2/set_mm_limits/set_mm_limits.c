@@ -1,3 +1,15 @@
+/*
+ * This file is aimed at implementing the
+ * syscall to set the global variable my_mm_limits.
+ * 
+ * The proper way to use the syscall is:
+ * 
+ * syscall(383,${uid},${mm_max});
+ * 
+ * written by Zhicun Chen
+ * 2020/06/10
+ */
+
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/kernel.h>

@@ -1,4 +1,14 @@
 /*
+ * This file is modified to support use
+ * do_send_sig_info() in a kernel module.
+ * 
+ * You can search my modifications by "my change begin".
+ * 
+ * modified by Zhicun Chen
+ * 2020/06/10
+ */
+
+/*
  *  linux/kernel/signal.c
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds

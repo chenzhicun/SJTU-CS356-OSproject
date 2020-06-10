@@ -1,3 +1,13 @@
+/*
+ * This file is aimed at adding my oom-killer
+ * as a syscall through a kernel module. The 
+ * idea is actually the same as the kernel version.
+ * But this can be called in a daemon program.
+ * 
+ * written by Zhicun Chen
+ * 2020/06/10
+ */ 
+
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/kernel.h>
