@@ -54,7 +54,7 @@ For detailed purpose of each program file, you can check the head comments to se
 
 #### Some Pre-defined Variables
 
-There are some pre-defined variables that affect how program works. First, **MY_MM_LENGTH** is defined as 10 in *line 37* of ***mm.h*** ,*line 2448* of ***page_alloc.c*** and *line 22* of ***set_mm_limits.c*** , if you want to change the number of slots in the **my_mm_limits** , you can change the definition of all **MY_MM_LENGTH**. Then there are three pre-defined in line 2803-2806, it decides which type of oom-killer will be used, if want to change, just comment the other define statements. By the way, if you would like to add some new omm-killer, you can create a new function and add another define statement, which is highly welcomed. The last pre-defined variables is **OOM_KILLER_TYPE** in the line 25 of ***my_oom_killer.c***, and there are comments to show how this variable works.
+There are some pre-defined variables that affect how program works. First, **MY_MM_LENGTH** is defined as 10 in *line 37* of ***mm.h*** ,*line 2448* of ***page_alloc.c*** and *line 22* of ***set_mm_limits.c*** , if you want to change the number of slots in the **my_mm_limits** , you can change the definition of all **MY_MM_LENGTH**. Then there are three pre-defined in line 2803-2806, it decides which type of oom-killer will be used, if want to change, just comment the other define statements. By the way, if you would like to add some new omm-killer, you can create a new function and add another define statement, which is highly welcomed. 
 
 #### How to Test
 
@@ -70,12 +70,13 @@ There are some pre-defined variables that affect how program works. First, **MY_
 
   Notes: you must first switch to user u0_a70 before you run this command.
 
-+ To test new oom-killer implemented as a daemon program and module, you need first comment the define statements of **OMM_KILLER_HIGHEST_RSS**, **OOM_KILLER_LONGEST_RUN_TIME**, **OOM_KILLER_WORST** to close oom-killer in the Linux kernel. And change **OOM_KILLER_TYPE**'s value to which type you want to test in *line25* of ***my_oom_killer.c***. Then:
++ To test new oom-killer implemented as a daemon program and module, you need first comment the define statements of **OMM_KILLER_HIGHEST_RSS**, **OOM_KILLER_LONGEST_RUN_TIME**, **OOM_KILLER_WORST** in ***page_alloc.c*** to close oom-killer in the Linux kernel. And run the proper commands to satisfy your requirements. Then:
 
   + Re-compile Android kernel and ***my_oom_killer.ko*** 
   + **insmod** ***set_mm_limits.ko*** and ***my_oom_killer.ko*** after you booting with the new kernel
   + Running ***oom_daemonARM*** to run the new oom-killer with the given time intervals to execute, one proper example is:
-    + **./oom_daemonARM 5**
+    + **./oom_daemonARM ${time intervals(seconds)} ${oom-killer type(chosen from 0,1,2)}**
+    + oom-killer type: 0 for highest RSS, 1 for longest running time, 2 for highest "badness" points
   + Running **oom_test_daemonARM** to test the oom-killer you chose. One proper example is:
     + **./oom_test_daemonARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000**
 
@@ -317,8 +318,8 @@ my_rss_oom_begin:
 			if (p->cred->uid==my_mm_limits.uid[i]){
 				// if this slot have not been set, then set
 				if (max_rss_process[i] == NULL){
-					// this condition aims to avoid NULL pointers, since some kernel 
-					// processes do not have mm pointer.
+			// this condition aims to avoid NULL pointers, since some kernel 
+			// processes do not have mm pointer.
 					if (p->mm){
 						max_rss_process[i]=p;
 						max_rss[i]=get_mm_rss(p->mm) * 4096;
@@ -326,7 +327,7 @@ my_rss_oom_begin:
 				}
 				else{
 					if (p->mm){
-						// if this process has larger rss than previous process, then update
+			// if this process has larger rss than previous process, then update
 						if ((get_mm_rss(p->mm) * 4096)>max_rss[i]){
 							max_rss_process[i]=p;
 							max_rss[i]=get_mm_rss(p->mm) * 4096;// FIX
@@ -353,10 +354,10 @@ my_rss_oom_begin:
 			// if do not exceed limits, then omit
 			if (mm_alloc[i] <= my_mm_limits.mm_max[i]){continue;}
 			else{
-				/*
-	 			* If the task is already exiting, don't alarm the sysadmin or kill
-	 			* its children or threads, just set TIF_MEMDIE so it can die quickly
-	 			*/
+		/*
+	 	* If the task is already exiting, don't alarm the sysadmin or kill
+	 	* its children or threads, just set TIF_MEMDIE so it can die quickly
+	 	*/
 				if (max_rss_process[i]->flags & PF_EXITING) {
 					set_tsk_thread_flag(max_rss_process[i], TIF_MEMDIE);
 					return;
@@ -366,15 +367,15 @@ my_rss_oom_begin:
 						max_rss_process[i]->cred->uid,mm_alloc[i],my_mm_limits.mm_max[i],max_rss_process[i]->pid,max_rss[i]);
 				task_unlock(max_rss_process[i]);
 				
-				/*
-	 			* Kill all user processes sharing victim->mm in other thread groups, if
-	 			* any.  They don't get access to memory reserves, though, to avoid
-	 			* depletion of all memory.  This prevents mm->mmap_sem livelock when an
-	 			* oom killed thread cannot exit because it requires the semaphore and
-	 			* its contended by another thread trying to allocate memory itself.
-	 			* That thread will now get access to memory reserves since it has a
-	 			* pending fatal signal.
-	 			*/
+		/*
+	 	* Kill all user processes sharing victim->mm in other thread groups, if
+	 	* any.  They don't get access to memory reserves, though, to avoid
+	 	* depletion of all memory.  This prevents mm->mmap_sem livelock when an
+	 	* oom killed thread cannot exit because it requires the semaphore and
+	 	* its contended by another thread trying to allocate memory itself.
+	 	* That thread will now get access to memory reserves since it has a
+	 	* pending fatal signal.
+	 	*/
 
 				for_each_process(p) {
 					if (p->mm == max_rss_process[i]->mm && !same_thread_group(p,max_rss_process[i]) 
@@ -759,3 +760,94 @@ int main(int argc, char **argv){
 ```
 
 ***Note:*** since I write the oom-killer in a modularized way, it is very convenient to add some new oom-killers.
+
+## 5. Results
+
+#### The Highest RSS OOM Killer (Kernel Version)
+
+After recompile the kernel with **OOM_KILLER_HIGHEST_RSS** defined. I install the **set_mm_limits.ko** and run the test program **./oom_test_kernelARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000**
+
+![image-20200611141206162](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611141206162.png)
+
+Above is the results in the user mode. I allocate exceeding memory to this user so oom-killer will be executed. And as you can see there is not the message that shows the allocation of mem=100000000 finished, which means the process with the largest RSS was killed before finish the allocation.
+
+![image-20200611141705186](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611141705186.png)
+
+Above is figure shows the results in the kernel mode. As you can see it kills the process with maximum RSS and print expected information, which satisfied the requirements. 
+
+#### The Longest Running Time OOM Killer (Kernel Version)
+
+![image-20200611142507126](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611142507126.png)
+
+![image-20200611142518995](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611142518995.png)
+
+Above are pictures show the output in the user mode and kernel mode. As you can see that the process that needs to be allocated 100000000 bytes physical memory undoubtedly needs more run time to finish the allocation. So it was killed, which is expected.
+
+#### The Largest "Badness" Points OOM Killer (Kernel Version)
+
+![image-20200611143035037](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611143035037.png)
+
+![image-20200611143109265](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611143109265.png)
+
+Also the above shows the output in the user mode and kernel mode. Because of the rule to computer the "badness" points, the process that needs to be allocated with 100000000 bytes physical memory is the "worst", so the oom-killer killed it, which is expected.
+
+#### The Highest RSS OOM Killer (Daemon Version)
+
+For the daemon test program, there is a difference that it will wait there for 60 seconds after allocation finished in order to wait oom-killer to triggred. After I install both ***my_oom_killer.ko*** and ***set_mm_limits.ko*** The test commands are:
+
+**./oom_daemonARM 5 0**
+
+**./oom_test_daemonARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000**
+
+![image-20200611145011300](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611145011300.png)
+
+![image-20200611144208865](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611144208865.png
+
+![image-20200611144354876](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611144354876.png)
+
+As you can see, unlike before, process that needs to be allocated to 100000000 bytes finished its allocation, because oom-killer will triggered every 5 seconds, not triggered by function **__alloc_pages_nodemask()**.
+
+#### The Longest Running Time OOM Killer (Daemon Version)
+
+The commands are:
+
+**./oom_daemonARM 5 1**
+
+**./oom_test_daemonARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000**
+
+Other discussion is similar like before. Here are the results.
+
+![image-20200611145132442](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611145132442.png)
+
+![image-20200611145138210](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611145138210.png)
+
+#### The Largest "Badness" Points OOM Killer (Daemon Version)
+
+The commands are:
+
+**./oom_daemonARM 5 2**
+
+**./oom_test_daemonARM u0_a70 100000000 20000 40000 20000 30000 200000 100000000**
+
+Other discussion is similar like before. Here are the results.
+
+![image-20200611145849603](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611145849603.png)
+
+![image-20200611145857849](C:\Users\70338\AppData\Roaming\Typora\typora-user-images\image-20200611145857849.png)
+
+## 6. Conclusion
+
+During this project, I read a lot of Linux source codes, especially, the page allocation part and out of memory part. To be honest, it is quite difficult to read Linux source codes at the beginning. However, with my efforts, I finally figured out how page allocation and out of memory works in the Linux. And I modified the source codes to accomplish this project, it is amazing to see the kernel works as the way I coded! So after I finished the basic part, I continued to explore this project  and do some bonus part.
+
+The other meaningful experience I learnt is the coding style. Reading the Linux source code, it shows me a good coding style, and I rewrite some codes in this style in the later period of this project to put some codes into a function to make the whole program more modularized. However, I think I can still do more packaging work, for example, I can implement the oom-killer with a function pointer argument, then I do not need to rewrite much similar code, just need to create a new compare rule function and pass it into the oom-killer. This way is also much easier to add some new oom-killer. However, due to the limits of the time, I do not do this job. I think I could do this later.
+
+The most difficult bug I encountered is that I forgot to multiple 4096 with one of the **get_mm_rss()** function, then the whole oom-killer will just loop infinitely and cause kernel panic.
+
+In summary, in this project, I put the theory we learnt in the lecture into the practice, and get familiar with the Linux source code and the Linux system.
+
+## 7. Thanks
+
++ Many thanks to Prof. Wu and Prof. Chen 's passion for teaching, they really helped me a lot to get a more detailed view of the complicated operating system.
++ Many thanks to all TAs, with their assistance,  I learned more efficiently.
++ Many thanks to all classmates, with their company, I enjoyed the class a lot. 
+
