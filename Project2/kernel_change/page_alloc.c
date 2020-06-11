@@ -2796,6 +2796,10 @@ my_badness_oom_begin:
 }
 EXPORT_SYMBOL(oom_killer_worst);
 
+/*
+ * The lines below decide which oom_killer will be used,
+ * if you want to use specific one, just comment the others.
+ */ 
 #define OOM_KILLER_HIGHEST_RSS
 //#define OOM_KILLER_LONGEST_RUN_TIME
 //#define OOM_KILLER_WORST
@@ -2863,6 +2867,10 @@ out:
 		goto retry_cpuset;
 
 	// my change begin
+	/*
+	 * Using some pre-compile skills and values defined before
+	 * to decide which oom_killer will be used.
+	 */
 	#ifdef OOM_KILLER_HIGHEST_RSS
 	oom_killer_highest_rss();
 	#endif
