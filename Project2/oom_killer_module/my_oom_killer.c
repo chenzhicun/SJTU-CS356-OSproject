@@ -21,18 +21,18 @@ MODULE_AUTHOR("Zhicun Chen");
 
 #define __NR_my_oom_killer 382
 
-// 0 means highest RSS, 1 means longest run time , 2 means worst.
-#define OOM_KILLER_TYPE 2
-
 static int (*oldcall)(void);
-static int my_oom_killer(void){
+static int my_oom_killer(int oom_killer_type){
 	/*
 	 * Just call corresponding oom_killer by OOM_KILLER_TYPE.
 	 * As you can see, I use a switch statement here, so if 
 	 * we design another efficient oom_killer, it's convinient
 	 * to add it to this syscall.
 	 */
-	switch (OOM_KILLER_TYPE){
+
+	// 0 means highest RSS, 1 means longest run time , 2 means worst.
+
+	switch (oom_killer_type){
 		case 0:
 			oom_killer_highest_rss();
 			break;

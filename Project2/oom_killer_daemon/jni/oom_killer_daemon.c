@@ -18,7 +18,9 @@
 int main(int argc, char **argv){
     // this parameter can control how long the syscall will be called once.
     int sleepTime = atoi(argv[1]);
-    printf("The time interval to run the oom killer is %d.\n", sleepTime);
+    int oom_killer_type = atoi(argv[2]);
+
+    printf("The time interval to run the oom killer is %d.\n The OOM killer's type is%d.\n", sleepTime, oom_killer_type);
     
     // To make this program to a daemon program.
     daemon(0,0);
@@ -26,7 +28,7 @@ int main(int argc, char **argv){
     while(1){
         sleep(sleepTime);
         
-        if (syscall(382) != 0){
+        if (syscall(382,oom_killer_type) != 0){
             printf("oops, oom killer crashed, please rerun this daemon.");
             break;
         }
